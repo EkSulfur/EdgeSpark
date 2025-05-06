@@ -19,7 +19,6 @@ def divide(data_path):
     train_set = {
         'full_pcd_all': [],
         'img_all': [],
-        'extra_img': [],
         'shape_all': [],
         'GT_pairs': [],
         'source_ind': [],
@@ -29,7 +28,6 @@ def divide(data_path):
     valid_set = {
         'full_pcd_all': [],
         'img_all': [],
-        'extra_img': [],
         'shape_all': [],
         'GT_pairs': [],
         'source_ind': [],
@@ -39,7 +37,6 @@ def divide(data_path):
     test_set = {
         'full_pcd_all': [],
         'img_all': [],
-        'extra_img': [],
         'shape_all': [],
         'GT_pairs': [],
         'source_ind': [],
@@ -56,7 +53,7 @@ def divide(data_path):
     shuffle_cur_dic = {shuffle_ind[i]: cur_ind[i] for i in range(nums)}
     dot1, dot2 = (nums * 5)//10, (nums * 6)//10
     for key in data:
-        if key in ['img_all', 'extra_img', 'full_pcd_all', 'shape_all']:
+        if key in ['img_all', 'full_pcd_all', 'shape_all']:
             train_set[key] = [data[key][idx] for idx in shuffle_ind[:dot1]]
             valid_set[key] = [data[key][idx] for idx in shuffle_ind[dot1:dot2]]
             test_set[key] = [data[key][idx] for idx in shuffle_ind[dot2:]]

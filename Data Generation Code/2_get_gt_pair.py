@@ -223,7 +223,6 @@ def preprocess(path):
 
     matching_set['full_pcd_all'].extend(full_contour_all)
     matching_set['img_all'].extend(img_all)
-    matching_set['extra_img'].extend(extra_all)
     matching_set['shape_all'].extend(list(shapes))
     matching_set["down_sample_pcd"].append(down_sample_contour)
 
@@ -256,14 +255,17 @@ def preprocess(path):
 
 '''------------------------------main-----------------------------'''
 
+data_path = "../dataset/image_dircircle_sample_V5_2/fragments"
+
 # fragment image path
-data_path = "./"
+# data_path = "./"
 sub_list = os.listdir(data_path)
 '''get GT transformation'''
 global matching_set
 
 # save path
-root = './'
+# root = './'
+root = data_path
 count = []
 if os.path.exists(root):
     with open(root, 'rb') as file:
@@ -272,7 +274,6 @@ else:
     matching_set = {
         'full_pcd_all': [],
         'img_all': [],
-        'extra_img': [],
         'shape_all': [],
         'GT_pairs': [],
         'source_ind': [],
