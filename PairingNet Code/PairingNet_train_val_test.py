@@ -30,7 +30,7 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data.distributed import DistributedSampler
 from torchsummary import summary
-
+from utils import calute_NDCG
 
 def set_seed(seed):
     random.seed(seed)
@@ -214,12 +214,14 @@ class Train_model(object):
 
                 source_input = {
                     'pcd': pcd[0].to(device), 'img': imgs[0].to(device), 'c_input': c_input[0].to(device),
-                    'adj': adj_s.to(device), 'factor': factors[0].to(device), 't_input': t_input[0].to(device), "att_mask":adjs[0].to(device)
+                    'adj': adj_s.to(device), 'factor': factors[0].to(device), 't_input': t_input[0].to(device),
+                    "att_mask":adjs[0].to(device)
                 }
 
                 target_input = {
                     'pcd': pcd[1].to(device), 'img': imgs[1].to(device), 'c_input': c_input[1].to(device),
-                    'adj': adj_t.to(device), 'factor': factors[1].to(device), 't_input': t_input[1].to(device), "att_mask":adjs[1].to(device)
+                    'adj': adj_t.to(device), 'factor': factors[1].to(device), 't_input': t_input[1].to(device),
+                    "att_mask":adjs[1].to(device)
                 }
 
 
