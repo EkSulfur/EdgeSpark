@@ -1,13 +1,17 @@
 import __init__
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+
+
 import cv2
 import torch
 import math
 import random
+import ipdb
 import pickle
 import multiprocessing
-multiprocessing.set_start_method('spawn', force=True)
+multiprocessing.set_start_method('fork', force=True)
+torch.multiprocessing.set_sharing_strategy('file_system')
 import numpy as np
 from glob import glob
 from tqdm import tqdm
@@ -30,7 +34,7 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data.distributed import DistributedSampler
 from torchsummary import summary
-from utils import calute_NDCG
+from utils.NDCG import calute_NDCG
 
 def set_seed(seed):
     random.seed(seed)
@@ -146,6 +150,7 @@ class Train_model(object):
 
         return pad_mask
 
+    @staticmethod
     def get_concat_adj(adj, max_len):
         device = adj.device
         temp_adj = torch.zeros((2, 0), dtype=torch.int).to(device)
@@ -192,8 +197,8 @@ class Train_model(object):
         device = self.device
         '''start training'''
         print('start!!!')
-        epoch = self.load_checkpoint()
-        # epoch = 0
+        # epoch = self.load_checkpoint()
+        epoch = 0
         min_loss = torch.inf
         for i in range(self.epoch):
             if i > self.epoch:
@@ -246,10 +251,11 @@ class Train_model(object):
             self.scheduler.step()
             self.writer.add_scalar('train_loss', loss_m_all.mean(), i)
 
-            if (i + 1) % 2 != 0:
-                continue
+            # if (i + 1) % 2 != 0:
+            #     continue
 
             '''validation'''
+            print("validation")
             self.models.eval()
             self.models.requires_grad_(False)
             for _, (mask_para, imgs, pcd, c_input, t_input, adjs, factors, att_mask) in enumerate(tqdm(self.valid_loader)):
@@ -283,7 +289,8 @@ class Train_model(object):
             self.writer.add_scalar('valid_loss', v_loss_np_all.mean(), i)
             self.writer.add_scalar('valid_positive_loss', v_p_all.mean(), i)
             means_all = v_p_all.mean()
-            # self.save_checkpoint(i)
+            print("save checkpoint")
+            self.save_checkpoint(i)
             if means_all < min_loss:
                 for path in glob(EXP_path+'/EXP/{}'.format(self.case_name) + '/val_min=*'):
                     os.remove(path)
@@ -882,7 +889,6 @@ class STAGE_TWO(Train_model):
                 loss_m_all = torch.cat((loss_m_all, torch.zeros([0])))
                 p_all = torch.cat((p_all, torch.zeros([0])))
 
-                import ipdb
                 # ipdb.set_trace()
                 top1_train, top5_train = self.calculate_train_val_top_recall(feature_s.detach().cpu(), feature_t.detach().cpu())
                 top1_reacll_train = torch.cat((top1_reacll_train, top1_train))
@@ -1517,10 +1523,15 @@ def init_seeds(seed=0, cuda_deterministic=True):
 if __name__ == "__main__":
     opt = config.args
 
+    opt.model_type = 'matching_test'
+    # opt.model_type = 'matching_train'
+    opt.epoch = 1
+
     '''set 温度系数'''
     temp = math.sqrt(opt.feature_dim)
 
-    net = pipeline.Vanilla
+    net = pipeline.VanillaOnlyContour
+    # net = pipeline.Vanilla
     ST2_net = pipeline.TransformerEncoderModel
 
     exp_name = 'exp1' 

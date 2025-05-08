@@ -82,7 +82,9 @@ class MyDataSet(Dataset):
         c_model = GT_config['c_model']  # l, io, ilo
         n = len(GT_config['img_all'])  # nums of fragments
         pair_n = len(GT_config['GT_pairs'])  # nums of gt pairs
-    
+
+        GT_config['adj_all'] = [None] * n
+
         c = GT_config['channel']
         trans = tf.Compose([
             tf.ToTensor(),
@@ -95,6 +97,16 @@ class MyDataSet(Dataset):
 
         max_points = args.max_length
         self.max_points = max_points
+
+        GT_config['adj_all'] = [None] * n
+
+        print("Update adjacency matrix")
+        for i in tqdm.trange(n):
+            GT_config['adj_all'][i] = get_adjacent2(
+                GT_config['full_pcd_all'][i],
+                max_points,
+                k=8
+            )
 
         # get max img shape
         shape_all = np.array(GT_config['shape_all'])
