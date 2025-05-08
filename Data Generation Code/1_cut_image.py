@@ -1287,7 +1287,7 @@ def random_segmentation_circle(imgs):
 if __name__ == '__main__':
     print('正在处理数据目录')
 
-    root = '/home/zrx/lab_disk1/zhourixin/oracle/DATASET/image+all+in+one/image all in one'  # 所有包含一张图片的文件夹的路径
+    root = 'E:/code/repos/EdgeSpark/data_generation/dataset/image_dir'  # 所有包含一张图片的文件夹的路径
     # root = '/home/zrx/lab_disk1/zhourixin/oracle/make+fragment/make fragment/my dataset/all/car'
 
     # segment_logic = "origin"
@@ -1300,9 +1300,9 @@ if __name__ == '__main__':
 
 
     if segment_logic == "circle_sample_V5_2":
-        save_root = "/home/zrx/lab_disk1/zhourixin/oracle/DATASET/image+all+in+one/image all in one "+segment_logic + "/fragments"
-        process_root = "/home/zrx/lab_disk1/zhourixin/oracle/DATASET/image+all+in+one/image all in one "+segment_logic + "/process"
-        areaJPG_root = "/home/zrx/lab_disk1/zhourixin/oracle/DATASET/image+all+in+one/image all in one "+segment_logic
+        save_root = root +segment_logic + "/fragments"
+        process_root = root +segment_logic + "/process"
+        areaJPG_root = root +segment_logic
         img_list = os.listdir(root)
         area_list=np.array([])
 

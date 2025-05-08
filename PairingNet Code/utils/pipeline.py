@@ -138,6 +138,38 @@ class Vanilla(nn.Module):
         return f_fused2, q, w_
 
 
+class VanillaOnlyContour(nn.Module):
+    def __init__(self, args):
+        super(VanillaOnlyContour, self).__init__()
+        self.flatten_net = FlattenNet_average(args.flattenNet_config)
+        self.encoder_c   = MyDeepGCN(args)
+        self.c_feature   = args.flattenNet_config["output_dim"]
+        self.fc          = nn.Linear(args.in_channels + 2, args.in_channels)
+        self.selfgate    = SelfGateV1()
+
+    def forward(self, inputs):
+        contour = inputs['pcd']                                    # [bs, n, 2]
+        c_input = inputs['c_input']                                # [bs, n, ..]
+        adj     = inputs['adj']
+
+        bs, n, _ = contour.shape
+
+        # 轮廓特征提取
+        contour = contour + torch.tensor([1, 1], device=contour.device)
+        flatted_c = self.flatten_net(c_input).view(bs, n, -1)
+        contour_in_c = contour - contour.mean(1, keepdim=True)
+        contour_in_c = contour_in_c - torch.tensor([1, 1], device=contour.device)
+        flatted_c    = torch.cat((flatted_c, contour_in_c), dim=-1)
+        flatted_c    = self.fc(flatted_c).view(-1, self.c_feature)
+        l_c          = self.encoder_c(flatted_c, adj).view(bs, n, -1)
+
+        # 构造与 Vanilla 接口一致的 q 和 w_
+        l_t = torch.zeros_like(l_c)
+        q   = torch.cat((l_c, l_t), dim=-1)
+        w_  = torch.ones(bs, n, 1, device=l_c.device)
+
+        return l_c, q, w_
+
 class TransformerEncoderModel(nn.Module):
     def __init__(self, args, d_model=64, nhead=2, num_layers=2):
         super(TransformerEncoderModel, self).__init__()

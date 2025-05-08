@@ -42,7 +42,7 @@ args.add_argument('--channel', type=int, default=3, help='img channel')
 args.add_argument('--epoch', type=int, default=128, help='train epoch')
 args.add_argument('--lr', type=float, default=1e-3, help='learning rate')
 args.add_argument('--weight_decay', type=float, default=5e-4, help='l2 normalization')
-args.add_argument('--matching_batch_size', type=int, default=25) #
+args.add_argument('--matching_batch_size', type=int, default=10) #
 args.add_argument('--load_checkpoint', type=bool, default=False, help='load checkpoints or not')
 args.add_argument('--max_length', type=int, default=2900)
 
