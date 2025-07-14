@@ -1,0 +1,8 @@
+EXP/
+*.log
+*.sh
+*.txt
+__pycache__
+PairingNet Code/
+Pictures/
+Data Generation Code/
