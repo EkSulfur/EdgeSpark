@@ -53,5 +53,5 @@ if __name__ == "__main__":
         print_pkl_structure(pkl_path)
     else:
         # 否则使用硬编码的路径
-        pkl_path = "/home/liuchenghao/Lab_disk/liuchenghao/EdgeSpark/dataset_backup/valid_set_with_downsample.pkl"
+        pkl_path = "/home/liuchenghao/Lab_disk/liuchenghao/EdgeSpark/dataset/valid_set_with_downsample.pkl"
         print_pkl_structure(pkl_path)

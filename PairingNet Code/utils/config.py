@@ -71,12 +71,15 @@ args.add_argument('--tranct_length', default=1408, type=int, help='the length of
 
 '''about path downsample'''
 dataset_select =390
+dataset_root = '/home/liuchenghao/Lab_disk/liuchenghao/EdgeSpark/dataset'
+# dataset_root = '/home/liuchenghao/Lab_disk/liuchenghao/EdgeSpark/smaller_dataset'
+# dataset_root = '/home/liuchenghao/Lab_disk/liuchenghao/EdgeSpark/small_dataset'
 
 args.add_argument('--dataset_select', type=int, default=dataset_select, help='select dataset')
-args.add_argument('--train_set', type=str, default='./{}/train_set_with_downsample.pkl'.format(dataset_select), help='train data path')
-args.add_argument('--valid_set', type=str, default='./{}/valid_set_with_downsample.pkl'.format(dataset_select), help='valid data path')
-args.add_argument('--test_set', type=str, default='./{}/test_set_with_downsample.pkl'.format(dataset_select), help='test data path')
-args.add_argument('--search_set', type=str, default='./{}/test_set_with_downsample.pkl'.format(dataset_select), help='searching data path')
+args.add_argument('--train_set', type=str, default=f'{dataset_root}/train_set_with_downsample.pkl'.format(dataset_select), help='train data path')
+args.add_argument('--valid_set', type=str, default=f'{dataset_root}/valid_set_with_downsample.pkl'.format(dataset_select), help='valid data path')
+args.add_argument('--test_set', type=str, default=f'{dataset_root}/test_set_with_downsample.pkl'.format(dataset_select), help='test data path')
+args.add_argument('--search_set', type=str, default=f'{dataset_root}/test_set_with_downsample.pkl'.format(dataset_select), help='searching data path')
 
 args.add_argument('--in_channels_stage2', default=128, type=int, help='the channel size of input point cloud ')
 # stage2_data_model = "unmerged"
@@ -87,7 +90,9 @@ exp_path = os.getcwd()
 args.add_argument('--exp_path', type=str, default="./", help='exp path')
 args.add_argument('--model_type', type=str, default='searching', help='matching_train or matching_test or save_matching_feature or searching_train or searching_test')
 
+args.add_argument('--preprocess_data', default=1, type=int)
+args.add_argument('--save_train_data', default=0, type=int)
+args.add_argument('--dataset_root', default=dataset_root, type=str)
+
 args = args.parse_args()
 args.in_channels = args.feature_dim
-
-

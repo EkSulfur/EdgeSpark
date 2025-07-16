@@ -239,7 +239,8 @@ def LOAI_features(contour_all_points, LOA_all_points,
     a3_val_dotproduct = (LOA_xi * LOA_ci).sum(dim=-1, keepdim=True)
     f3_angle_LOAci_LOAxi = torch.acos(torch.clamp(a3_val_dotproduct, -1 + epsilon, 1 - epsilon))
     D_0_condition = (a1_like_cos < a2_like_cos)  # Comparing cosines
-    D_0_sign = torch.where(D_0_condition, torch.ones_like(D_0_condition), -torch.ones_like(D_0_condition)).float()
+    # 修改第242行
+    D_0_sign = D_0_condition.float() * 2 - 1
     D_0_sign[a1_like_cos == a2_like_cos] = -1  # As per D_0[D_0 ==0] = -1
     f3_oriented_angle = D_0_sign * f3_angle_LOAci_LOAxi
 
@@ -271,7 +272,8 @@ def LOAI_features(contour_all_points, LOA_all_points,
     a6_val_dotproduct = (LOA_xi * LOA_xim1).sum(dim=-1, keepdim=True)
     f7_angle_LOAxi_LOAxim1 = torch.acos(torch.clamp(a6_val_dotproduct, -1 + epsilon, 1 - epsilon))
     D_1_condition = (a4_like_cos < a5_like_cos)
-    D_1_sign = torch.where(D_1_condition, torch.ones_like(D_1_condition), -torch.ones_like(D_1_condition)).float()
+    # 修改第283行
+    D_1_sign = D_1_condition.float() * 2 - 1
     D_1_sign[a4_like_cos == a5_like_cos] = -1
     f7_oriented_angle = D_1_sign * f7_angle_LOAxi_LOAxim1
 
@@ -470,18 +472,26 @@ class rcri_cm_adapted_non_lra(nn.Module):  # Renamed to reflect source
 
 
 class ContourFragmentEncoder(nn.Module):
-    def __init__(self,
-                 fragment_length: int,
-                 num_fragments: int,
-                 output_dim: int,
-                 loa_calc_neighbors: int = 64):  # Default from RCRI_CM.py compute_LOA
+    def __init__(self, args, num_fragments=None, output_dim=None):
         super(ContourFragmentEncoder, self).__init__()
 
-        self.fragment_length = fragment_length
-        self.num_fragments = num_fragments
-        self.output_dim = output_dim
+        # Calculate/extract parameters from args or use provided values
+        self.fragment_length = 16  # Default fragment length (LGA size)
+        
+        # Use explicitly provided parameters if given, otherwise extract from args
+        if num_fragments is not None:
+            self.num_fragments = num_fragments
+        else:
+            # Use args.max_length directly to ensure compatibility with expected output size
+            self.num_fragments = args.max_length
+            
+        if output_dim is not None:
+            self.output_dim = output_dim
+        else:
+            self.output_dim = args.feature_dim  # Use feature dimension from args
+            
         # num_neighbors for LOA calculation, distinct from fragment_length (LGA size)
-        self.loa_calc_neighbors = loa_calc_neighbors
+        self.loa_calc_neighbors = min(64, args.max_length // 8)  # Default value adapted to input size
 
         self.encoder = rcri_cm_adapted_non_lra(  # Use the one based on RCRI_CM.py
             num_sample_interest_points=self.num_fragments,
@@ -528,18 +538,16 @@ if __name__ == '__main__':
     bs = 2
     num_contour_points = 50
 
-    frag_len = 16
-    num_frags = 10
-    feat_dim = 64
-    loa_neigh_for_calc = 8  # Neighbors for LOA calculation itself (m in Fig.3 of paper)
-    # The default in RCRI_CM's compute_LOA is 64, so if you want specific, pass it.
+    # Create a mock args object with necessary attributes
+    class Args:
+        def __init__(self):
+            self.max_length = 40  # This would create 10 fragments (max_length // 4)
+            self.feature_dim = 64
 
-    encoder = ContourFragmentEncoder(
-        fragment_length=frag_len,
-        num_fragments=num_frags,
-        output_dim=feat_dim,
-        loa_calc_neighbors=loa_neigh_for_calc
-    )
+    args = Args()
+
+    # Create encoder using the args object
+    encoder = ContourFragmentEncoder(args)
 
     angles = torch.linspace(0, 2 * torch.pi, num_contour_points, dtype=torch.float32).unsqueeze(0).expand(bs, -1)
     radius = 1.0 + 0.1 * torch.rand(bs, num_contour_points)
@@ -563,8 +571,8 @@ if __name__ == '__main__':
     print("w_e shape:", w_e.shape)
 
     num_short_nodes = 5  # Test N < loa_calc_neighbors and N < fragment_length
-    assert num_short_nodes < loa_neigh_for_calc
-    assert num_short_nodes < frag_len
+    assert num_short_nodes < encoder.loa_calc_neighbors
+    assert num_short_nodes < encoder.fragment_length
     dummy_pcd_short = torch.rand(bs, num_short_nodes, 2)
     inputs_dict_short = {'pcd': dummy_pcd_short}
     l_c_s, q_s, w_s = encoder(inputs_dict_short)

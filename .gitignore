@@ -1,8 +1,14 @@
+.gitignore
 EXP/
 *.log
 *.sh
 *.txt
 __pycache__
 PairingNet Code/
+PairingNet Code
 Pictures/
 Data Generation Code/
+dataset
+experiments/
+old-README.md
+old-requirments.yaml

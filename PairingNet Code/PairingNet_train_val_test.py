@@ -1,6 +1,6 @@
 import __init__
 import os
-# os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 
 import cv2
@@ -19,7 +19,7 @@ from hausdorff import hausdorff_distance
 from utils.loss import FocalLoss
 from utils.evaluation import e_rmse
 from utils.utilz import affine_transform
-from utils import pipeline, config, data_preprocess, visualization
+from utils import pipeline, config, data_preprocess, visualization, new_pipeline
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from functools import partial
@@ -35,6 +35,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data.distributed import DistributedSampler
 from torchsummary import summary
 from utils.NDCG import calute_NDCG
+
 
 def set_seed(seed):
     random.seed(seed)
@@ -80,6 +81,20 @@ class Train_model(object):
         
         '''set training dataset'''
         print('set training dataset')
+        # if args.preprocess_data:
+        #     self.train_data, _ = self.set_dataset(args.train_set, args)
+        #     # save the train data
+        #     if args.save_train_data:
+        #         print('save train data')
+        #         with open(f'{args.dataset_root}/train_data.pkl', 'wb') as file:
+        #             pickle.dump(self.train_data, file, protocol=pickle.HIGHEST_PROTOCOL)
+        #         print(f'{args.dataset_root}/save train data done')
+        #         exit(0)
+        # else:
+        #     # use the saved train data
+        #     print('load train data')
+        #     with open(f'{args.dataset_root}/train_data.pkl', 'rb') as file:
+        #         self.train_data = pickle.load(file)
         self.train_data, _ = self.set_dataset(args.train_set, args)
         self.train_loader = DataLoader(self.train_data, args.matching_batch_size, num_workers=0,shuffle=True)
 
@@ -1523,21 +1538,31 @@ def init_seeds(seed=0, cuda_deterministic=True):
 if __name__ == "__main__":
     opt = config.args
 
-    opt.model_type = 'matching_test'
+    # opt.model_type = 'matching_test'
+    # opt.model_type = 'matching_train_origin'
     # opt.model_type = 'matching_train'
-    opt.epoch = 1
+    opt.epoch = 5
 
     '''set 温度系数'''
     temp = math.sqrt(opt.feature_dim)
 
-    net = pipeline.VanillaOnlyContour
+    # net = pipeline.VanillaOnlyContour
     # net = pipeline.Vanilla
+    if opt.model_type == 'matching_train_origin':
+        net = pipeline.VanillaOnlyContour
+    else:
+        net = new_pipeline.ContourFragmentEncoder
     ST2_net = pipeline.TransformerEncoderModel
 
     exp_name = 'exp1' 
 
     EXP_path = opt.exp_path
-    if opt.model_type == 'matching_train': 
+    if opt.model_type == 'matching_train':
+        print("using new model") 
+        trainer = Train_model(net, opt, temp, exp_name)
+        trainer.train_start()
+    elif opt.model_type == 'matching_train_origin':
+        print("using origin model")
         trainer = Train_model(net, opt, temp, exp_name)
         trainer.train_start()
     elif opt.model_type == 'matching_test': 

@@ -191,12 +191,12 @@ class MyDataSet(Dataset):
     def __len__(self):
         if self.model in ["searching_train", "searching_test", "save_stage1_feature"]:
             return len(self.inputs['img_all'])
-        elif self.model in ["matching_train", "matching_test"]:
+        elif self.model in ["matching_train", "matching_test", "matching_train_origin"]:
             return len(self.inputs['GT_pairs'])
 
     def __getitem__(self, idx):
         self.inputs['GT_pairs'] = np.array(self.inputs['GT_pairs'])
-        if self.model == 'matching_train' or self.model == 'matching_test':
+        if self.model == 'matching_train' or self.model == 'matching_test' or self.model == 'matching_train_origin':
             idx_s, idx_t = self.inputs['GT_pairs'][idx]
             full_s, full_t = self.inputs['full_pcd_all'][idx_s], self.inputs['full_pcd_all'][idx_t]
             return \
@@ -518,6 +518,3 @@ class MyRealDataSet_searching(Dataset):
 
         elif self.model == 'stage2_real_searching':
             return self.stage1_feature[idx], self.inputs['full_pcd_all'][idx]
-        
-
-
