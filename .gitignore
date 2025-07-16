@@ -6,3 +6,6 @@ __pycache__
 PairingNet Code/
 Pictures/
 Data Generation Code/
+dataset/
+.venv/
+.venv_backup/

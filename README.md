@@ -1,49 +1,61 @@
-# PairingNet: A Learning-based Pair-searching and -matching Network for Image Fragments
+# EgdeSpark
 
-This repo contains official code and datasets for the ECCV 2024 paper [PairingNet: A Learning-based Pair-searching and -matching Network for Image Fragments](https://arxiv.org/abs/2312.08704).
+## 任务简介
 
-## Overview
-<div align="center">
-<img src="./Pictures/figure1.png" width="100%">
-</div>
-We propose a learning-based image fragment pair-searching and -matching approach to solve the challenging restoration problem. Existing works use rule-based methods to match similar contour shapes or textures, which are always difficult to tune hyperparameters for extensive data and computationally time-consuming. Therefore, we propose a neural network that can effectively utilize neighbor textures with contour shape information to fundamentally improve performance. First, we employ a graph-based network to extract the local contour and texture features of fragments. Then, for the pair-searching task, we adopt a linear transformer-based module to integrate these local features and use contrastive loss to encode the global features of each fragment. For the pair-matching task, we design a weighted fusion module to dynamically fuse extracted local contour and texture features, and formulate a similarity matrix for each pair of fragments to calculate the matching score and infer the adjacent segment of contours. To faithfully evaluate our proposed network, we collect a real dataset and generate a simulated image fragment dataset through an algorithm we designed that tears complete images into irregular fragments. The experimental results show that our proposed network achieves excellent pair-searching accuracy, reduces matching errors, and significantly reduces computational time.
+EdgeSpark项目旨在对不规则二维碎片集合进行匹配，即对于任意碎片，找出在碎片集中可能与之相邻的碎片
 
-## Installation
-We tested on a server configured with Ubuntu 20.04, cuda 11.6 and gcc 9.3.0. Other similar configurations should also work.
-1. Clone this repo:
+## 数据集概述
 
-```
-git clone https://github.com/zhourixin/PairingNet.git
-cd PairingNet
-```
+目前已有碎片数据集，并且分为了训练集、测试集、验证集三组，包含下面信息：
+本地项目中的路径：
+./dataset/train_set.pkl
+./dataset/test_set.pkl
+./dataset/vaild_set.pkl
 
-2. Install dependencies
-```
-conda env create --file requirments.yaml
-conda activate PairingNet
-```
+- 'full_pcd_all'：每个碎片的边缘点云
+- 'GT_pairs'：匹配的碎片对
+- 'source_ind'：匹配的碎片对中源碎片匹配的点的索引
+- 'target_ind'：匹配的碎片对中目标碎片匹配的点的索引 
 
+## 核心算法思路
 
-## Dataset
-The generated fragments dataset and real fragments dataset can be downloaded [here](https://huggingface.co/datasets/zhourxin/Fragments-dataset). It consists of 8196 generated fragments of 390 PNG images and 320 real fragments of 34 printed images. The generated fragments dataset is divided into train set, validation set and test set. 
+我们考虑使用对碎片进行暴力采样，而后计算碎片间匹配度的方法
 
-## Training
+### 暴力算法
 
-## Evaluation on generated fragments dataset
+下面对比一般算法和暴力算法并大致阐述算法流程，概述我理解的暴力算法具有的优点
 
+##### 一般算法流程
 
-## Evaluation on real fragments dataset
+对碎片对编码，得到得到l1, l2维的特征，每一维对应碎片的某个片段（有序）；
+对l1, l2维的特征两两匹配
 
+##### 随机暴力算法（暴力采样）流程
 
-## Customize your own fragment data using our cutting algorithm
+根据经验和碎片边缘的长度计算采样次数n1, n2；
+对两个碎片分别随机随机采样n1, n2次碎片片段，编码；
+根据先前随机暴力采样得到的结果（n1 * n2 * d的矩阵，d是相似度的维度），两两计算片段相似度，根据匹配度计算碎片对匹配的可能性（该部分称为综合模块，使用深度学习的方法）
 
-## Contact
-- Rixin Zhou: zhourx22@mails.jlu.edu.cn
-- Ding Xia: dingxia1995@gmail.com
-- Yi Zhang: 2356711993@qq.com
-- Honglin Pang: panghlwork@gmail.com
-- Xi Yang: earthyangxi@gmail.com
-- Chuntao Li: lct33@jlu.edu.cn
-## Citation
+##### 暴力算法的一个潜在的优点
 
-If you find our work helpful, please consider citing our work.
+如果对碎片编码后按照一定的间隔切分，则如何选取切分的起始点会影响匹配的结果（偏移程度大会影响到匹配度）
+
+在采样次数足够多的情况下，总会采样到偏移程度不大的碎片片段，抵消了这个瑕疵
+
+## 架构设计
+
+### 网络设计
+
+可使用Transformer，将n1 * n2 * d_new的Tensor展平为n1 * n2 的序列（由于是随机采样，此处序列中元素的位置没有意义，是否不需要位置编码；但片段在原碎片上的位置仍然是必要的，因此d加上两片段在原碎片中的位置变成d_new）
+
+自注意力机制两两匹配的过程对于上述提到的算法流程而言天然地合适
+
+### 损失函数设计
+
+考虑端到端的任务：直接用二元交叉熵损失
+
+## 开发日志
+
+### 7月16日
+
+先只考虑碎片的边缘集合信息，而不考虑内容，故数据集中只包含点云相关的边缘信息，没有图像内容；先实现网络，记录训练结果
