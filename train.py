@@ -42,12 +42,11 @@ class Trainer:
             self.optimizer, 
             mode='min', 
             factor=0.5, 
-            patience=config['training']['patience'],
-            verbose=True
+            patience=config['training']['patience']
         )
         
         # 损失函数
-        self.criterion = nn.BCELoss()
+        self.criterion = nn.BCEWithLogitsLoss()
         
         # 训练历史
         self.train_history = {
@@ -92,7 +91,7 @@ class Trainer:
             
             # 统计
             total_loss += loss.item()
-            all_predictions.extend((predictions > 0.5).cpu().numpy())
+            all_predictions.extend((torch.sigmoid(predictions) > 0.5).cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
             
             # 打印进度
@@ -129,8 +128,9 @@ class Trainer:
                 
                 # 统计
                 total_loss += loss.item()
-                all_predictions.extend((predictions > 0.5).cpu().numpy())
-                all_probabilities.extend(predictions.cpu().numpy())
+                probs = torch.sigmoid(predictions)
+                all_predictions.extend((probs > 0.5).cpu().numpy())
+                all_probabilities.extend(probs.cpu().numpy())
                 all_labels.extend(labels.cpu().numpy())
         
         # 计算指标

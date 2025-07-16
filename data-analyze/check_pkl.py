@@ -2,6 +2,8 @@ import os
 import pickle
 import sys
 
+pkl_path = "dataset/train_set.pkl"
+
 def print_pkl_structure(filepath):
     """
     打印 PKL 文件的结构
@@ -52,6 +54,4 @@ if __name__ == "__main__":
         pkl_path = sys.argv[1]
         print_pkl_structure(pkl_path)
     else:
-        # 否则使用硬编码的路径
-        pkl_path = "/home/liuchenghao/Lab_disk/liuchenghao/EdgeSpark/dataset_backup/valid_set_with_downsample.pkl"
         print_pkl_structure(pkl_path)

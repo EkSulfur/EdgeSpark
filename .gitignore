@@ -1,6 +1,5 @@
 EXP/
 *.log
-*.sh
 *.txt
 __pycache__
 PairingNet Code/
@@ -9,3 +8,4 @@ Data Generation Code/
 dataset/
 .venv/
 .venv_backup/
+old_README.md

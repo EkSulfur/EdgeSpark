@@ -273,7 +273,7 @@ class EdgeSparkNet(nn.Module):
             edge_points1: (batch_size, N1, 2) 第一个碎片的边缘点云
             edge_points2: (batch_size, N2, 2) 第二个碎片的边缘点云
         Returns:
-            match_prob: (batch_size, 1) 匹配概率
+            match_logits: (batch_size, 1) 匹配对数几率
         """
         batch_size = edge_points1.shape[0]
         
@@ -308,13 +308,13 @@ class EdgeSparkNet(nn.Module):
             # attention_features = self.attention_pooling(similarity_matrix)
             
             # 6. 分类
-            match_prob = torch.sigmoid(self.classifier(processed_features))  # (batch_size, 1)
-            match_probs.append(match_prob)
+            match_logits = self.classifier(processed_features)  # (batch_size, 1)
+            match_probs.append(match_logits)
         
         # 平均多次采样的结果
-        final_match_prob = torch.stack(match_probs, dim=0).mean(dim=0)
+        final_match_logits = torch.stack(match_probs, dim=0).mean(dim=0)
         
-        return final_match_prob
+        return final_match_logits
 
 # 测试代码
 def test_improved_network():
