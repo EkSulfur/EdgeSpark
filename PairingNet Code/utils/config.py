@@ -73,10 +73,10 @@ args.add_argument('--tranct_length', default=1408, type=int, help='the length of
 dataset_select =390
 
 args.add_argument('--dataset_select', type=int, default=dataset_select, help='select dataset')
-args.add_argument('--train_set', type=str, default='./{}/train_set_with_downsample.pkl'.format(dataset_select), help='train data path')
-args.add_argument('--valid_set', type=str, default='./{}/valid_set_with_downsample.pkl'.format(dataset_select), help='valid data path')
-args.add_argument('--test_set', type=str, default='./{}/test_set_with_downsample.pkl'.format(dataset_select), help='test data path')
-args.add_argument('--search_set', type=str, default='./{}/test_set_with_downsample.pkl'.format(dataset_select), help='searching data path')
+args.add_argument('--train_set', type=str, default='./dataset/train_set_with_downsample.pkl', help='train data path')
+args.add_argument('--valid_set', type=str, default='./dataset/valid_set_with_downsample.pkl', help='valid data path')
+args.add_argument('--test_set', type=str, default='./dataset/test_set_with_downsample.pkl', help='test data path')
+args.add_argument('--search_set', type=str, default='./dataset/test_set_with_downsample.pkl', help='searching data path')
 
 args.add_argument('--in_channels_stage2', default=128, type=int, help='the channel size of input point cloud ')
 # stage2_data_model = "unmerged"
