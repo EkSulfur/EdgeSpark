@@ -30,7 +30,7 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data.distributed import DistributedSampler
 from torchsummary import summary
-from utils import calcute_NDCG 
+from utils.NDCG import calculate_NDCG 
 
 def set_seed(seed):
     random.seed(seed)
