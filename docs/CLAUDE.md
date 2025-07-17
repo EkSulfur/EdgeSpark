@@ -76,7 +76,3 @@ uv sync
 
 # Run main entry point
 python main.py
-
-# For legacy conda environment (if needed)
-conda env create -f requirments.yaml
-```
