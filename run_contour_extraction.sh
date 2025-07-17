@@ -4,7 +4,7 @@
 # 功能：训练模型、提取contour模块、运行测试，支持日志重定向和后台执行
 
 # 配置变量
-PROJECT_DIR="/home/eksulfur/PairingNet/PairingNet Code"
+PROJECT_DIR="$HOME/PairingNet/PairingNet Code"
 LOG_DIR="$PROJECT_DIR/logs"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 MAIN_LOG="$LOG_DIR/contour_extraction_$TIMESTAMP.log"
@@ -51,7 +51,7 @@ check_dependencies() {
 check_dataset() {
     log "检查数据集文件..."
     
-    local dataset_dir="$PROJECT_DIR/dataset"
+    local dataset_dir="$HOME/PairingNet/dataset"
     local required_files=("train_set_with_downsample.pkl" "valid_set_with_downsample.pkl" "test_set_with_downsample.pkl")
     
     if [ ! -d "$dataset_dir" ]; then
