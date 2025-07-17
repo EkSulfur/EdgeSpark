@@ -11,7 +11,10 @@ import json
 from datetime import datetime
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, roc_auc_score
 
-from dataset_simple import create_simple_dataloaders
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'data'))
+from improved_dataset_loader import create_improved_dataloaders
 
 class EdgeShapeEncoder(nn.Module):
     """
@@ -282,44 +285,116 @@ class FinalTrainer:
         print(f"\n🎉 训练完成！最佳准确率: {best_acc:.4f}")
         return best_acc
 
-def main():
-    """主函数"""
-    print("🔥 EdgeSpark最终尝试")
-    print("=" * 50)
+def run_experiment(sampling_strategy='ordered', epochs=25):
+    """运行单个实验"""
+    print(f"\n🔬 实验: 采样策略 = {sampling_strategy}")
+    print("=" * 60)
     
     # 创建数据加载器
-    print("📚 创建数据加载器...")
-    train_loader, val_loader, test_loader = create_simple_dataloaders(
+    print("📚 创建改进版数据加载器...")
+    train_loader, val_loader, test_loader = create_improved_dataloaders(
         "dataset/train_set.pkl",
-        "dataset/valid_set.pkl",
+        "dataset/valid_set.pkl", 
         "dataset/test_set.pkl",
         batch_size=32,
         max_points=1000,
-        num_workers=4
+        num_workers=4,
+        sampling_strategy=sampling_strategy
     )
     
     # 创建训练器
     trainer = FinalTrainer()
     
     # 开始训练
-    best_acc = trainer.train(train_loader, val_loader, epochs=25)
+    best_acc = trainer.train(train_loader, val_loader, epochs=epochs)
+    
+    # 保存模型（加上策略名称）
+    if os.path.exists('best_final_model.pth'):
+        os.rename('best_final_model.pth', f'best_final_model_{sampling_strategy}.pth')
+        print(f"💾 模型已保存为: best_final_model_{sampling_strategy}.pth")
+    
+    return best_acc, trainer.history
+
+def main():
+    """主函数 - 运行多个实验对比"""
+    print("🔥 EdgeSpark最终尝试 - 改进版DataLoader实验")
+    print("=" * 70)
+    
+    # 实验配置
+    strategies = ['ordered', 'random', 'padding']
+    results = {}
+    
+    # 运行每个策略的实验
+    for strategy in strategies:
+        try:
+            best_acc, history = run_experiment(strategy, epochs=25)
+            results[strategy] = {
+                'best_acc': best_acc,
+                'history': history
+            }
+            
+            print(f"\n📊 {strategy}策略结果: 最佳准确率 = {best_acc:.4f}")
+            
+        except Exception as e:
+            print(f"❌ {strategy}策略实验失败: {e}")
+            results[strategy] = {'best_acc': 0.0, 'error': str(e)}
+    
+    # 结果对比分析
+    print(f"\n" + "=" * 70)
+    print("📈 实验结果对比")
+    print("=" * 70)
+    
+    best_strategy = None
+    best_score = 0.0
+    
+    for strategy, result in results.items():
+        if 'error' not in result:
+            acc = result['best_acc']
+            print(f"{strategy:>10}策略: {acc:.4f}")
+            if acc > best_score:
+                best_score = acc
+                best_strategy = strategy
+        else:
+            print(f"{strategy:>10}策略: 失败 ({result['error']})")
+    
+    print(f"\n🏆 最佳策略: {best_strategy} (准确率: {best_score:.4f})")
+    
+    # 保存实验结果
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    results_file = f"improved_dataloader_results_{timestamp}.json"
+    
+    # 转换history为可序列化格式
+    serializable_results = {}
+    for strategy, result in results.items():
+        if 'history' in result:
+            serializable_results[strategy] = {
+                'best_acc': result['best_acc'],
+                'final_epoch': len(result['history']),
+                'final_val_acc': result['history'][-1]['val_acc'] if result['history'] else 0.0
+            }
+        else:
+            serializable_results[strategy] = result
+    
+    with open(results_file, 'w') as f:
+        json.dump(serializable_results, f, indent=2)
+    
+    print(f"📁 实验结果已保存到: {results_file}")
     
     # 结果分析
-    print(f"\n=== 最终结果 ===")
-    if best_acc > 0.7:
-        print("🎉 成功！模型学到了有用的特征")
-    elif best_acc > 0.6:
-        print("⚠️  部分成功，需要进一步优化")
+    print(f"\n=== 最终分析 ===")
+    if best_score > 0.7:
+        print("🎉 成功！改进的数据加载器显著提升了性能")
+    elif best_score > 0.6:
+        print("⚠️  部分成功，改进的数据加载器有一定效果")
     else:
-        print("❌ 失败，可能需要重新思考问题")
+        print("❌ 需要进一步优化数据处理策略")
         print("💡 建议：")
-        print("   1. 检查数据预处理")
-        print("   2. 尝试不同的特征表示")
-        print("   3. 考虑使用预训练模型")
-        print("   4. 增加数据增强")
-        print("   5. 尝试集成学习")
+        print("   1. 尝试其他采样策略")
+        print("   2. 调整max_points参数")
+        print("   3. 增强数据增强策略")
+        print("   4. 检查边缘点云质量")
     
-    return best_acc
+    return best_score
 
 if __name__ == "__main__":
     result = main()
