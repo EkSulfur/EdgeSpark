@@ -84,7 +84,7 @@ stage2_data_model = "merged"
 args.add_argument('--stage2_data_model', type=str, default=stage2_data_model, help='select dataset')
 args.add_argument('--stage2_feature_path', type=str, default='./stage1_feature/{}'.format(stage2_data_model), help='searching data path')
 exp_path = os.getcwd()
-args.add_argument('--exp_path', type=str, default="./", help='exp path')
+args.add_argument('--exp_path', type=str, default=exp_path, help='exp path')
 args.add_argument('--model_type', type=str, default='searching', help='matching_train or matching_test or save_matching_feature or searching_train or searching_test')
 
 args = args.parse_args()

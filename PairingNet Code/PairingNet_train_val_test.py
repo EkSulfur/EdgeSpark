@@ -30,7 +30,12 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data.distributed import DistributedSampler
 from torchsummary import summary
-from utils.NDCG import calculate_NDCG 
+from utils.NDCG import calculate_NDCG
+
+# 设置实验路径
+from utils import config
+opt = config.args
+EXP_path = opt.exp_path 
 
 def set_seed(seed):
     random.seed(seed)
@@ -1523,7 +1528,6 @@ if __name__ == "__main__":
 
     exp_name = 'exp1' 
 
-    EXP_path = opt.exp_path
     if opt.model_type == 'matching_train': 
         trainer = Train_model(net, opt, temp, exp_name)
         trainer.train_start()
