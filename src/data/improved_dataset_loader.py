@@ -209,7 +209,7 @@ class ImprovedEdgeSparkDataset(data.Dataset):
             'target_idx': sample['target_idx']
         }
 
-def create_improved_dataloaders(train_pkl: str, 
+def create_dataloaders(train_pkl: str, 
                                valid_pkl: str, 
                                test_pkl: str,
                                batch_size: int = 32,

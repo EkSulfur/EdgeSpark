@@ -25,7 +25,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from models.network_improved import EdgeSparkNet
-from data.dataset_loader import create_dataloaders
+from data.improved_dataset_loader import create_dataloaders
 # from network_improved import EdgeSparkNet
 # from dataset_loader import create_dataloaders
 

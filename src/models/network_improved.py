@@ -270,7 +270,7 @@ class AttentionPooling(nn.Module):
         attended_values = attended_values.view(batch_size, seq_len, self.feature_dim)
 
         # 全局最大池化
-        pooled_features = torch.max(attended_values, dim=1)  # (batch_size, feature_dim)
+        pooled_features, _ = torch.max(attended_values, dim=1)  # (batch_size, feature_dim)
         
         # 输出投影和规范化
         pooled_features = self.output_proj(pooled_features)
