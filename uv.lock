@@ -16,6 +16,14 @@ wheels = [
 ]
 
 [[package]]
+name = "colorama"
+version = "0.4.6"
+source = { registry = "https://download.pytorch.org/whl/cu118" }
+wheels = [
+    { url = "https://download.pytorch.org/whl/colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6" },
+]
+
+[[package]]
 name = "contourpy"
 version = "1.3.2"
 source = { registry = "https://pypi.org/simple" }
@@ -69,6 +77,7 @@ dependencies = [
     { name = "torch", version = "2.7.1+cu118", source = { registry = "https://download.pytorch.org/whl/cu118" }, marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (sys_platform != 'darwin' and sys_platform != 'linux')" },
     { name = "torchvision", version = "0.22.1", source = { registry = "https://pypi.org/simple" }, marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or sys_platform == 'darwin'" },
     { name = "torchvision", version = "0.22.1+cu118", source = { registry = "https://download.pytorch.org/whl/cu118" }, marker = "(platform_machine != 'aarch64' and sys_platform == 'linux') or (sys_platform != 'darwin' and sys_platform != 'linux')" },
+    { name = "tqdm" },
 ]
 
 [package.metadata]
@@ -80,6 +89,7 @@ requires-dist = [
     { name = "tensorboard", specifier = ">=2.19.0" },
     { name = "torch", specifier = ">=2.7.1" },
     { name = "torchvision", specifier = ">=0.22.1" },
+    { name = "tqdm", specifier = ">=4.67.1" },
 ]
 
 [[package]]
@@ -749,6 +759,18 @@ wheels = [
     { url = "https://download.pytorch.org/whl/cu118/torchvision-0.22.1%2Bcu118-cp313-cp313-win_amd64.whl", hash = "sha256:2dd71de1013c1929ea404832b863f769f3fa8b466cc7653b567becf16eedc91b" },
     { url = "https://download.pytorch.org/whl/cu118/torchvision-0.22.1%2Bcu118-cp313-cp313t-manylinux_2_28_x86_64.whl", hash = "sha256:c8a1e3862f5f7a0c0446211db467be247efe03c46889e1eecbae760f96d2b98e" },
     { url = "https://download.pytorch.org/whl/cu118/torchvision-0.22.1%2Bcu118-cp313-cp313t-win_amd64.whl", hash = "sha256:ab848efeb898a7844d7a245e62d2a7982b3d56daf0619283103d8fff6b694d3c" },
+]
+
+[[package]]
+name = "tqdm"
+version = "4.67.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a8/4b/29b4ef32e036bb34e4ab51796dd745cdba7ed47ad142a9f4a1eb8e0c744d/tqdm-4.67.1.tar.gz", hash = "sha256:f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2", size = 169737, upload-time = "2024-11-24T20:12:22.481Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d0/30/dc54f88dd4a2b5dc8a0279bdd7270e735851848b762aeb1c1184ed1f6b14/tqdm-4.67.1-py3-none-any.whl", hash = "sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2", size = 78540, upload-time = "2024-11-24T20:12:19.698Z" },
 ]
 
 [[package]]
