@@ -1,0 +1,7 @@
+{
+  "NDCG@5": 0.0,
+  "NDCG@10": 0.0,
+  "NDCG@20": 0.0,
+  "total_fragments": 100,
+  "total_gt_pairs": 5,
+  "fragments_with_matches": 

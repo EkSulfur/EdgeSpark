@@ -5,8 +5,11 @@ __pycache__
 PairingNet Code/
 Pictures/
 Data Generation Code/
-dataset/
-.venv/
+PairingNet
+dataset
+.venv
+.idea
+.claude
 .venv_backup/
 old_README.md
 experiments

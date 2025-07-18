@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -197,38 +198,163 @@ class SimilarityMatrixProcessor(nn.Module):
 
 class AttentionPooling(nn.Module):
     """
-    注意力池化
-    从相似度矩阵中找到关键的匹配区域
+    改进的注意力池化
+    从相似度矩阵中找到关键的匹配区域，支持多头注意力
     """
-    def __init__(self, feature_dim=64):
+    def __init__(self, feature_dim=64, num_heads=8):
         super().__init__()
         self.feature_dim = feature_dim
+        # 确保num_heads能被feature_dim整除
+        self.num_heads = min(num_heads, feature_dim)
+        if feature_dim % self.num_heads != 0:
+            self.num_heads = 8 if feature_dim >= 8 else feature_dim
+        self.head_dim = feature_dim // self.num_heads
         
-        # 注意力计算
-        self.attention_proj = nn.Linear(1, feature_dim)
-        self.attention_weights = nn.Linear(feature_dim, 1)
+        # 多头注意力
+        self.query_proj = nn.Linear(1, feature_dim)
+        self.key_proj = nn.Linear(1, feature_dim)
+        self.value_proj = nn.Linear(1, feature_dim)
+        
+        # 位置编码设置（动态生成）
+        self.feature_dim = feature_dim
+        
+        # 输出投影
+        self.output_proj = nn.Linear(feature_dim, feature_dim)
+        self.norm = nn.LayerNorm(feature_dim)
+        self.dropout = nn.Dropout(0.1)
+    
+    def _generate_pos_encoding(self, max_len, d_model):
+        """生成正弦位置编码"""
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        return pe.unsqueeze(0)  # (1, max_len, d_model)
         
     def forward(self, similarity_matrix):
         """
-        注意力池化
+        多头注意力池化
         Args:
             similarity_matrix: (batch_size, n1, n2)
         Returns:
             pooled_features: (batch_size, feature_dim)
         """
         batch_size, n1, n2 = similarity_matrix.shape
+        seq_len = n1 * n2
         
-        # 展平相似度矩阵
-        flat_similarity = similarity_matrix.view(batch_size, n1 * n2, 1)
+        # 展平相似度矩阵并添加位置编码
+        flat_similarity = similarity_matrix.view(batch_size, seq_len, 1)
         
-        # 计算注意力权重
-        attention_features = F.relu(self.attention_proj(flat_similarity))
-        attention_weights = F.softmax(self.attention_weights(attention_features), dim=1)
+        # 动态生成位置编码
+        pos_enc = self._generate_pos_encoding(seq_len, self.feature_dim).to(flat_similarity.device)
+        pos_enc = pos_enc.expand(batch_size, -1, -1)
         
-        # 加权池化
-        pooled_features = torch.sum(attention_weights * attention_features, dim=1)
+        # 计算查询、键、值
+        queries = self.query_proj(flat_similarity) + pos_enc  # (batch_size, seq_len, feature_dim)
+        keys = self.key_proj(flat_similarity) + pos_enc
+        values = self.value_proj(flat_similarity)
+        
+        # 多头注意力
+        queries = queries.view(batch_size, seq_len, self.num_heads, self.head_dim)
+        keys = keys.view(batch_size, seq_len, self.num_heads, self.head_dim)
+        values = values.view(batch_size, seq_len, self.num_heads, self.head_dim)
+        
+        # 计算注意力得分
+        attention_scores = torch.matmul(queries, keys.transpose(-2, -1)) / math.sqrt(self.head_dim)
+        attention_weights = F.softmax(attention_scores, dim=-1)
+        attention_weights = self.dropout(attention_weights)
+        
+        # 应用注意力
+        attended_values = torch.matmul(attention_weights, values)
+        attended_values = attended_values.view(batch_size, seq_len, self.feature_dim)
+
+        # 全局最大池化
+        pooled_features, _ = torch.max(attended_values, dim=1)  # (batch_size, feature_dim)
+        
+        # 输出投影和规范化
+        pooled_features = self.output_proj(pooled_features)
+        pooled_features = self.norm(pooled_features)
         
         return pooled_features
+
+class CrossAttention(nn.Module):
+    """
+    交叉注意力模块
+    让两个片段的特征互相关注
+    """
+    def __init__(self, feature_dim=256, num_heads=8):
+        super().__init__()
+        self.feature_dim = feature_dim
+        self.num_heads = min(num_heads, feature_dim)
+        if feature_dim % self.num_heads != 0:
+            self.num_heads = 8 if feature_dim >= 8 else feature_dim
+        self.head_dim = feature_dim // self.num_heads
+        
+        # 查询、键、值投影
+        self.query_proj = nn.Linear(feature_dim, feature_dim)
+        self.key_proj = nn.Linear(feature_dim, feature_dim)
+        self.value_proj = nn.Linear(feature_dim, feature_dim)
+        
+        # 输出投影
+        self.output_proj = nn.Linear(feature_dim, feature_dim)
+        self.norm1 = nn.LayerNorm(feature_dim)
+        self.norm2 = nn.LayerNorm(feature_dim)
+        
+        # 前馈网络
+        self.ffn = nn.Sequential(
+            nn.Linear(feature_dim, feature_dim * 2),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(feature_dim * 2, feature_dim),
+            nn.Dropout(0.1)
+        )
+        
+    def forward(self, features1, features2):
+        """
+        交叉注意力计算
+        Args:
+            features1: (batch_size, n1, feature_dim)
+            features2: (batch_size, n2, feature_dim)
+        Returns:
+            enhanced_features1: (batch_size, n1, feature_dim)
+            enhanced_features2: (batch_size, n2, feature_dim)
+        """
+        batch_size, n1, _ = features1.shape
+        _, n2, _ = features2.shape
+        
+        # 计算features1对features2的注意力
+        q1 = self.query_proj(features1).view(batch_size, n1, self.num_heads, self.head_dim)
+        k2 = self.key_proj(features2).view(batch_size, n2, self.num_heads, self.head_dim)
+        v2 = self.value_proj(features2).view(batch_size, n2, self.num_heads, self.head_dim)
+        
+        # 注意力计算
+        attention_scores = torch.matmul(q1, k2.transpose(-2, -1)) / math.sqrt(self.head_dim)
+        attention_weights = F.softmax(attention_scores, dim=-1)
+        
+        # 应用注意力
+        attended_values = torch.matmul(attention_weights, v2)
+        attended_values = attended_values.view(batch_size, n1, self.feature_dim)
+        
+        # 残差连接和层归一化
+        enhanced_features1 = self.norm1(features1 + self.output_proj(attended_values))
+        enhanced_features1 = self.norm2(enhanced_features1 + self.ffn(enhanced_features1))
+        
+        # 计算features2对features1的注意力
+        q2 = self.query_proj(features2).view(batch_size, n2, self.num_heads, self.head_dim)
+        k1 = self.key_proj(features1).view(batch_size, n1, self.num_heads, self.head_dim)
+        v1 = self.value_proj(features1).view(batch_size, n1, self.num_heads, self.head_dim)
+        
+        attention_scores = torch.matmul(q2, k1.transpose(-2, -1)) / math.sqrt(self.head_dim)
+        attention_weights = F.softmax(attention_scores, dim=-1)
+        
+        attended_values = torch.matmul(attention_weights, v1)
+        attended_values = attended_values.view(batch_size, n2, self.feature_dim)
+        
+        enhanced_features2 = self.norm1(features2 + self.output_proj(attended_values))
+        enhanced_features2 = self.norm2(enhanced_features2 + self.ffn(enhanced_features2))
+        
+        return enhanced_features1, enhanced_features2
 
 class EdgeSparkNet(nn.Module):
     """
@@ -237,8 +363,8 @@ class EdgeSparkNet(nn.Module):
     """
     def __init__(self, 
                  segment_length=32,
-                 n1=16,  # 第一个碎片的采样段数
-                 n2=16,  # 第二个碎片的采样段数
+                 n1=1600,  # 第一个碎片的采样段数
+                 n2=1600,  # 第二个碎片的采样段数
                  feature_dim=256,
                  hidden_channels=64,
                  temperature=1.0,
@@ -253,6 +379,7 @@ class EdgeSparkNet(nn.Module):
         # 各个模块
         self.segment_sampler = SegmentSampler(segment_length)
         self.segment_encoder = SegmentEncoder(output_dim=feature_dim)
+        self.cross_attention = CrossAttention(feature_dim=feature_dim)
         self.similarity_computer = LearnableMetricSimilarity(feature_dim, temperature)
         self.similarity_processor = SimilarityMatrixProcessor(
             input_channels=1, 
@@ -279,10 +406,10 @@ class EdgeSparkNet(nn.Module):
         """
         batch_size = edge_points1.shape[0]
         
-        # 多次采样取平均
+        # 原本：多次采样取平均，这里单次采样，不取平均
         match_probs = []
         
-        for _ in range(self.num_samples):
+        for _ in range(1):  # 原本为 self.num_samples
             # 1. 段采样
             segments1_list = []
             segments2_list = []
@@ -300,17 +427,23 @@ class EdgeSparkNet(nn.Module):
             features1 = self.segment_encoder(segments1)  # (batch_size, n1, feature_dim)
             features2 = self.segment_encoder(segments2)  # (batch_size, n2, feature_dim)
             
-            # 3. 相似度计算
-            similarity_matrix = self.similarity_computer(features1, features2)  # (batch_size, n1, n2)
+            # 3. 交叉注意力增强特征
+            enhanced_features1, enhanced_features2 = self.cross_attention(features1, features2)
             
-            # 4. 相似度矩阵处理
+            # 4. 相似度计算（使用增强后的特征）
+            similarity_matrix = self.similarity_computer(enhanced_features1, enhanced_features2)  # (batch_size, n1, n2)
+            
+            # 5. 相似度矩阵处理
             processed_features = self.similarity_processor(similarity_matrix)  # (batch_size, hidden_channels)
             
-            # 5. 注意力池化（可选的额外处理）
-            # attention_features = self.attention_pooling(similarity_matrix)
+            # 6. 注意力池化（增强特征）
+            attention_features = self.attention_pooling(similarity_matrix)  # (batch_size, hidden_channels)
             
-            # 6. 分类
-            match_logits = self.classifier(processed_features)  # (batch_size, 1)
+            # 7. 特征融合
+            fused_features = processed_features + attention_features  # 残差连接
+            
+            # 8. 分类
+            match_logits = self.classifier(fused_features)  # (batch_size, 1)
             match_probs.append(match_logits)
         
         # 平均多次采样的结果

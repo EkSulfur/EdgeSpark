@@ -1,0 +1,16 @@
+{
+  "num_samples": 274,
+  "num_features": 64,
+  "num_positive": 137,
+  "num_negative": 137,
+  "inter_class_distance": 0.12306959927082062,
+  "avg_intra_class_distance": 1.7055745124816895,
+  "separability_ratio": 0.07215727120637894,
+  "active_features": 64,
+  "feature_variance_mean": 0.08037377893924713,
+  "feature_variance_std": 0.0552518367767334,
+  "pos_feature_mean": 0.4263855516910553,
+  "neg_feature_mean": 0.42956018447875977,
+  "pos_feature_std": 0.2562534213066101,
+  "neg_feature_std": 0.2784641683101654
+}

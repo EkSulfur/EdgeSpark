@@ -1,8 +1,19 @@
+import os
+
+
 import torch
+
+# 自动选择可用的CUDA设备
+if torch.cuda.is_available():
+    device_count = torch.cuda.device_count()
+    if device_count > 1:
+        torch.cuda.set_device(1)
+    else:
+        torch.cuda.set_device(0)
+
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
-import os
 import time
 import json
 import argparse
@@ -10,8 +21,13 @@ from datetime import datetime
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, roc_auc_score
 import numpy as np
 
-from network_improved import EdgeSparkNet
-from dataset_loader import create_dataloaders
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+from models.network_improved import EdgeSparkNet
+from data.improved_dataset_loader import create_dataloaders
+# from network_improved import EdgeSparkNet
+# from dataset_loader import create_dataloaders
 
 class Trainer:
     """训练器类"""
@@ -271,12 +287,12 @@ def create_config(epochs=100):
     config = {
         'model': {
             'segment_length': 32,
-            'n1': 16,
-            'n2': 16,
+            'n1': 160,  # 减少采样数量以节省GPU内存
+            'n2': 160,
             'feature_dim': 256,
             'hidden_channels': 64,
             'temperature': 1.0,
-            'num_samples': 3
+            'num_samples': 1  # 不取平均 -> 1 n1, n2为实际对碎片的采样次数
         },
         'training': {
             'epochs': epochs,
