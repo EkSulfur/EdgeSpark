@@ -3,7 +3,7 @@ import os
 
 import torch
 
-torch.cuda.set_device(1)
+torch.cuda.set_device(0)
 
 import torch.nn as nn
 import torch.optim as optim
@@ -281,8 +281,8 @@ def create_config(epochs=100):
     config = {
         'model': {
             'segment_length': 32,
-            'n1': 160,
-            'n2': 160,
+            'n1': 640,
+            'n2': 640,
             'feature_dim': 256,
             'hidden_channels': 64,
             'temperature': 1.0,

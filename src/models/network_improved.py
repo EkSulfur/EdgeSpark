@@ -215,13 +215,23 @@ class AttentionPooling(nn.Module):
         self.key_proj = nn.Linear(1, feature_dim)
         self.value_proj = nn.Linear(1, feature_dim)
         
-        # 位置编码
-        self.pos_encoding = nn.Parameter(torch.randn(1, 2560, feature_dim))  # 支持最大50x50的相似度矩阵
+        # 位置编码（动态生成，不固定大小）
+        self.max_seq_len = 50000  # 支持更大的相似度矩阵
+        self.register_buffer('pos_encoding', self._generate_pos_encoding(self.max_seq_len, feature_dim))
         
         # 输出投影
         self.output_proj = nn.Linear(feature_dim, feature_dim)
         self.norm = nn.LayerNorm(feature_dim)
         self.dropout = nn.Dropout(0.1)
+    
+    def _generate_pos_encoding(self, max_len, d_model):
+        """生成正弦位置编码"""
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        return pe.unsqueeze(0)  # (1, max_len, d_model)
         
     def forward(self, similarity_matrix):
         """
