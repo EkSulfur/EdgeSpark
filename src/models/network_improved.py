@@ -268,9 +268,9 @@ class AttentionPooling(nn.Module):
         # 应用注意力
         attended_values = torch.matmul(attention_weights, values)
         attended_values = attended_values.view(batch_size, seq_len, self.feature_dim)
-        
-        # 全局平均池化
-        pooled_features = torch.mean(attended_values, dim=1)  # (batch_size, feature_dim)
+
+        # 全局最大池化
+        pooled_features = torch.max(attended_values, dim=1)  # (batch_size, feature_dim)
         
         # 输出投影和规范化
         pooled_features = self.output_proj(pooled_features)
