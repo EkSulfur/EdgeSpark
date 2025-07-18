@@ -3,7 +3,7 @@ import os
 
 import torch
 
-torch.cuda.set_device(0)
+torch.cuda.set_device(1)
 
 import torch.nn as nn
 import torch.optim as optim
