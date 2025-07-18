@@ -215,9 +215,8 @@ class AttentionPooling(nn.Module):
         self.key_proj = nn.Linear(1, feature_dim)
         self.value_proj = nn.Linear(1, feature_dim)
         
-        # 位置编码（动态生成，不固定大小）
-        self.max_seq_len = 50000  # 支持更大的相似度矩阵
-        self.register_buffer('pos_encoding', self._generate_pos_encoding(self.max_seq_len, feature_dim))
+        # 位置编码设置（动态生成）
+        self.feature_dim = feature_dim
         
         # 输出投影
         self.output_proj = nn.Linear(feature_dim, feature_dim)
@@ -247,8 +246,9 @@ class AttentionPooling(nn.Module):
         # 展平相似度矩阵并添加位置编码
         flat_similarity = similarity_matrix.view(batch_size, seq_len, 1)
         
-        # 添加位置编码
-        pos_enc = self.pos_encoding[:, :seq_len, :].expand(batch_size, -1, -1)
+        # 动态生成位置编码
+        pos_enc = self._generate_pos_encoding(seq_len, self.feature_dim).to(flat_similarity.device)
+        pos_enc = pos_enc.expand(batch_size, -1, -1)
         
         # 计算查询、键、值
         queries = self.query_proj(flat_similarity) + pos_enc  # (batch_size, seq_len, feature_dim)

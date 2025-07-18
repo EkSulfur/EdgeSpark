@@ -3,7 +3,13 @@ import os
 
 import torch
 
-torch.cuda.set_device(1)
+# 自动选择可用的CUDA设备
+if torch.cuda.is_available():
+    device_count = torch.cuda.device_count()
+    if device_count > 1:
+        torch.cuda.set_device(1)
+    else:
+        torch.cuda.set_device(0)
 
 import torch.nn as nn
 import torch.optim as optim
@@ -281,8 +287,8 @@ def create_config(epochs=100):
     config = {
         'model': {
             'segment_length': 32,
-            'n1': 640,
-            'n2': 640,
+            'n1': 160,  # 减少采样数量以节省GPU内存
+            'n2': 160,
             'feature_dim': 256,
             'hidden_channels': 64,
             'temperature': 1.0,
